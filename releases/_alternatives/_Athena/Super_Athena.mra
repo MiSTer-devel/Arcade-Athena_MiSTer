@@ -74,5 +74,5 @@
 		<part>02</part>
 	</rom>
 	
-<buttons default="A,B,Start,R,L,X,Y" names="PUSH1,PUSH2,Start1,Coin,Pause,Service,Start2"></buttons>
+<buttons default="A,B,Start,R,L,X" names="PUSH1,PUSH2,Start1,Coin,Pause,Service"></buttons>
 </misterromdescription>

@@ -228,15 +228,12 @@ localparam CONF_STR = {
 	"P2O[17],Back Layer,On,Off;",
 	"P2O[18],Front Layer,On,Off;",
 	"P2-;",
-	// "P3,SNAC;",
-	// "P3O[20:19],Type,None,DB15_1P,DB15_2P,--;",
-	// "P3-;",
 	"DIP;",
 	"-;",
 	"T[0],Reset;",
 	"R[0],Reset and close OSD;",
-	"J1,Fire,Missile,Start1,Coin,Pause,Service,Start2;",
-	"jn,A,B,Start,R,L,X,Y;",
+	"J1,Fire,Missile,Start1,Coin,Pause,Service;",
+	"jn,A,B,Start,R,L,X;",
 	"DEFMRA,Athena.mra;",
 	"V,v",`BUILD_DATE 
 };
@@ -502,23 +499,23 @@ wire m_pause2; //active high
 	assign m_down1     = ~joystick_0[2];
 	assign m_left1     = ~joystick_0[1];
 	assign m_right1    = ~joystick_0[0];
-	assign m_btn1_1     = ~joystick_0[4];  
-	assign m_btn2_1  = ~joystick_0[5];  
+	assign m_btn1_1    = ~joystick_0[4];  
+	assign m_btn2_1    = ~joystick_0[5];  
 	assign m_start1    = ~joystick_0[6];  
 	assign m_coin1     = ~joystick_0[7];  
-	assign m_service1  = ~joystick_0[10];
-	assign m_pause1    =  joystick_0[11]; //active high
+	assign m_service1  = ~joystick_0[8];
+	assign m_pause1    =  joystick_0[9]; //active high
 	
 	assign m_up2       = ~joystick_1[3];
 	assign m_down2     = ~joystick_1[2];
 	assign m_left2     = ~joystick_1[1];
 	assign m_right2    = ~joystick_1[0];
-	assign m_btn1_2     = ~joystick_1[4];  
-	assign m_btn2_2  = ~joystick_1[5];  
+	assign m_btn1_2    = ~joystick_1[4];  
+	assign m_btn2_2    = ~joystick_1[5];  
 	assign m_start2    = ~joystick_1[6];  
 	assign m_coin2     = ~joystick_1[7];  
-	assign m_service2  = ~joystick_1[10];
-	assign m_pause2    =  joystick_1[11]; //active high
+	assign m_service2  = ~joystick_1[8];
+	assign m_pause2    =  joystick_1[9]; //active high
 
 assign PLAYER1 = {2'b11,m_up1,m_down1,m_right1,m_left1,m_service1,5'b11111,m_btn2_1,m_btn1_1,m_start1,m_coin1};
 assign PLAYER2 = {2'b11,m_up2,m_down2,m_right2,m_left2,m_service2,5'b11111,m_btn2_2,m_btn1_2,m_start2,m_coin2};

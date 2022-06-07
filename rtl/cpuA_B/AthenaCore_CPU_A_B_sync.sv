@@ -279,7 +279,7 @@ module AthenaCore_CPU_A_B_sync
         //IO input 
 
         //Athena INPUTS
-        else if(!COIN)                                 cpuA_Din <= {PLAYER2[1],PLAYER2[1],PLAYER1[0],PLAYER2[0],2'b11,(PLAYER1[9] & PLAYER2[9]),SND_BUSY}; //{START1,START2,COIN_1,COIN_2,UNK,UNK,SERVICE,SND_BUSY}                       
+        else if(!COIN)                                 cpuA_Din <= {PLAYER1[1],PLAYER2[1],PLAYER1[0],PLAYER2[0],2'b11,(PLAYER1[9] & PLAYER2[9]),SND_BUSY}; //{START1,START2,COIN_1,COIN_2,UNK,UNK,SERVICE,SND_BUSY}                       
         else if(!P1)                                   cpuA_Din <= {2'b11,PLAYER1[3],PLAYER1[2],PLAYER1[11],PLAYER1[10],PLAYER1[12],PLAYER1[13]}; //Player1 inputs:{UNK,UNK,BTN2,BTN1,RIGHT,LEFT,DOWN,UP}
         else if(!P2)                                   cpuA_Din <= {2'b11,PLAYER2[3],PLAYER2[2],PLAYER2[11],PLAYER2[10],PLAYER2[12],PLAYER2[13]}; //Player2 inputs:{UNK,UNK,BTN2,BTN1,RIGHT,LEFT,DOWN,UP}
         else if(!P1_P2)                                cpuA_Din <= {8'hff};  // P1/P2 Buttons:{UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK}

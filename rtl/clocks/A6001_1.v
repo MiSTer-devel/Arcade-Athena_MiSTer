@@ -58,7 +58,7 @@ module A6001_1 (
     assign  PLOAD_RSHIFTn = ~((                                       A15_QCn & rV_Cn) |
                               (F15_BE_Qn &      F15_AE_Qn &           C3A_Q          ) |
                               (F15_BE_Qn &      F15_AE_Qn &           A15_QCn        ) |
-                              (F15_BE_Qn &      F15_AE_Qn & C3A_Q   & C3A_Q   & rV_Cn));
+                              (F15_BE_Qn &      F15_AE_Qn & C3A_Q   & rV_Cn          ));
 
     //------------------------------------------------------
     assign  VDGterm = A15_QBn & rV_Cn;

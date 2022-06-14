@@ -40,6 +40,8 @@ module AthenaCore_CPU_A_B_sync
     output logic [7:0] V_out,
     input  wire  [7:0] V_in,
 
+    //HACK settings
+    input wire [7:0] hack_settings,
     //hps_io rom interface
 	input wire         [24:0] ioctl_addr,
 	input wire         [7:0] ioctl_data,
@@ -385,6 +387,8 @@ module AthenaCore_CPU_A_B_sync
     logic [7:0] data_P5_2F;
     logic [7:0] data_P4_2E;
 
+    //logic [7:0] cheat_data;
+    //assign cheat_data = ((ioctl_addr ==  25'h10918) && hack_settings[1]) ? 8'hC3 : ioctl_data;//insert Invincibility cheat code 0xC3 at 0x918 ROM address of Subcpu.
     eprom_16K P6_2H
     (
         .ADDR(cpuB_A[13:0]),
@@ -405,6 +409,7 @@ module AthenaCore_CPU_A_B_sync
         .ADDR_DL(ioctl_addr),
         .CLK_DL(clk),
         .DATA_IN(ioctl_data),
+        
         .CS_DL(P5_2F_cs),
         .WR(ioctl_wr)
     );
@@ -416,7 +421,7 @@ module AthenaCore_CPU_A_B_sync
         .DATA(data_P4_2E),
         .ADDR_DL(ioctl_addr),
         .CLK_DL(clk),
-        .DATA_IN(ioctl_data),
+        .DATA_IN(ioctl_data), //insert Invincibility cheat code 0xC3 at 0x918 ROM address of Subcpu.
         .CS_DL(P4_2E_cs),
         .WR(ioctl_wr)
     );

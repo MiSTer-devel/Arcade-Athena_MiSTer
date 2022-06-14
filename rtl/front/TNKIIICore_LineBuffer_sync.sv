@@ -18,6 +18,7 @@ module TNKIIICore_LineBuffer_sync(
     input wire CK0n,
     input wire FCK,
     input wire LD,
+    input wire [7:0] hack_settings,
     input wire [8:0] FL_Y, //comes from FRONT output
     input wire HLD,
     input wire FY8,
@@ -96,6 +97,13 @@ module TNKIIICore_LineBuffer_sync(
 
     logic [8:0] RA;
     //TNKIII uses LS191 counter
+
+    //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
+    logic [8:0] const_minus_x= 9'd199 /* synthesis preserve */;
+    logic [8:0] hacked_FY;
+    assign hacked_FY = (hack_settings[0]) ? ({FY8,FY} + (~const_minus_x + 9'd1)) : {FY8,FY};
+    //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
+        
     n9bit_counter ra_counter
     (
         .Reset_n(VIDEO_RSTn),
@@ -105,53 +113,9 @@ module TNKIIICore_LineBuffer_sync(
         .load_n(HLDr), //Use delayed signal for trigger with rising edge of CK1
         .ent_n(1'b0),
         .enp_n(1'b0),
-        .P({FY8,FY}),
+        .P(hacked_FY), //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
         .Q(RA)   // 4-bit output
     );
-    // logic c9_rco;
-    // counter_74169 c9
-    // (
-    //     .Reset_n(VIDEO_RSTn),
-    //     .clk(clk), 
-    //     .cen(CK1),
-    //     .direction(INVn), // 1 = Up, 0 = Down
-    //     .load_n(HLDr), //Use delayed signal for trigger with rising edge of CK1
-    //     .ent_n(1'b0),
-    //     .enp_n(1'b0),
-    //     .P(FY[3:0]),
-    //     .rco_n(c9_rco),    // Ripple Carry-out (RCO)
-    //     .Q(RA[3:0])   // 4-bit output
-    // );
-
-    // logic c10_rco;
-    // counter_74169 c10
-    // (
-    //     .Reset_n(VIDEO_RSTn),
-    //     .clk(clk), 
-    //     .cen(CK1),
-    //     .direction(INVn), // 1 = Up, 0 = Down
-    //     .load_n(HLDr), //Use delayed signal for trigger with rising edge of CK1
-    //     .ent_n(c9_rco),
-    //     .enp_n(1'b0),
-    //     .P(FY[7:4]),
-    //     .rco_n(c10_rco),    // Ripple Carry-out (RCO)
-    //     .Q(RA[7:4])   // 4-bit output
-    // );
-
-    // logic [2:0] c11_dum;
-    // counter_74169 c11
-    // (
-    //     .Reset_n(VIDEO_RSTn),
-    //     .clk(clk), 
-    //     .cen(CK1),
-    //     .direction(INVn), // 1 = Up, 0 = Down
-    //     .load_n(HLDr), //Use delayed signal for trigger with rising edge of CK1
-    //     .ent_n(c10_rco),
-    //     .enp_n(1'b0),
-    //     .P({3'b111,FY8}),
-    //     .rco_n(),    // Ripple Carry-out (RCO)
-    //     .Q({c11_dum,RA[8]})   // 4-bit output
-    // );
 
     logic a14_A; //74LS20 4-input NAND gate
     assign a14_A = ~(&FD[2:0]);
@@ -209,8 +173,8 @@ module TNKIIICore_LineBuffer_sync(
     ttl_74374_sync d13 (.RESETn(VIDEO_RSTn), .OCn(D9_A_Q), .Clk(clk), .Cen(CK0n), .D(FD[7:0]), .Q(DL0_in));
 
     //TMM2018D-45 2K x 8bits NMOS Static RAM
-    SRAM_sync_noinit #(.ADDR_WIDTH(11)) c13(.ADDR({2'b00,L0A}), .clk(clk), .cen(~L0CE), .we(~L0WE), .DATA(DL0_in), .Q(DL0_out) );
-    SRAM_sync_noinit #(.ADDR_WIDTH(11)) c14(.ADDR({2'b00,L1A}), .clk(clk), .cen(~L1CE), .we(~L1WE), .DATA(DL1_in), .Q(DL1_out) );
+    SRAM_sync_noinit #(.ADDR_WIDTH(9)) c13(.ADDR({L0A}), .clk(clk), .cen(~L0CE), .we(~L0WE), .DATA(DL0_in), .Q(DL0_out) );
+    SRAM_sync_noinit #(.ADDR_WIDTH(9)) c14(.ADDR({L1A}), .clk(clk), .cen(~L1CE), .we(~L1WE), .DATA(DL1_in), .Q(DL1_out) );
     
     logic [7:0] DL0, DL1;
     assign DL0 = ((!L0OE && !L0CE) ? DL0_out : 8'hff); //simulate a tri state bus when the bus is tied to High value in the case of that nothing is connected to it.

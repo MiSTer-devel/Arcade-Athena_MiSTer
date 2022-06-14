@@ -23,6 +23,8 @@ module TNKIIICore_Back1_sync(
     input wire B1SY,
     input wire B1SX,
 
+    //HACK SETTINGS
+    input wire [7:0] hack_settings,
     //MSBs
     input wire B1Y8,
     input wire B1X8,
@@ -90,9 +92,15 @@ module TNKIIICore_Back1_sync(
     logic [1:0] c12_dum;
     //Y7~3 -> Y[4:0]
     ttl_74283_nodly c14 (.A({1'b1, B1Y[2:0]}),    .B({1'b1, H2,H1,H0}), .C_in(1'b0),     .Sum({c14_dum3,B1H[2:0]}),           .C_out()        );
-    logic c13_cout;
-    ttl_74283_nodly c13 (.A(B1Y[6:3]),            .B(Y[3:0]),           .C_in(1'b0),     .Sum(B1H[6:3]),                      .C_out(c13_cout));
-    ttl_74283_nodly c12 (.A({2'b11,B1Y8,B1Y[7]}), .B({2'b11, H8,Y[4]}), .C_in(c13_cout), .Sum({c12_dum,B1H[8:7]}),            .C_out()        );
+    // logic c13_cout;
+    // ttl_74283_nodly c13 (.A(B1Y[6:3]),            .B(Y[3:0]),           .C_in(1'b0),     .Sum(B1H[6:3]),                      .C_out(c13_cout));
+    // ttl_74283_nodly c12 (.A({2'b11,B1Y8,B1Y[7]}), .B({2'b11, H8,Y[4]}), .C_in(c13_cout), .Sum({c12_dum,B1H[8:7]}),            .C_out()        );
+
+    //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
+    logic [5:0] const_plus1d;  
+    assign const_plus1d = (hack_settings[0]) ? 6'b00_0001 : 6'b00_0000;
+    assign B1H[8:3] = {B1Y8,B1Y[7:3]} + {H8,Y} + const_plus1d; //B1Y[8:3] - X - 1h
+    //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
 
     assign B1Hn[0] = ~B1H[0];
     assign B1Hn[1] = ~B1H[1];
@@ -133,11 +141,17 @@ module TNKIIICore_Back1_sync(
     logic [7:0] B1X;
     ttl_74273_sync b12(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(B1SX), .D(vdinX_r), .Q(B1X)); //*** SYNCHRONOUS HACK ***
     logic [8:0] B1V;
-    logic a12_cout;
-    ttl_74283_nodly a12 (.A(B1X[3:0]),    .B(X[3:0]), .C_in(1'b0),         .Sum(B1V[3:0]), .C_out(a12_cout));
-    logic a11_cout;
-    ttl_74283_nodly a11 (.A(B1X[7:4]),    .B(X[7:4]), .C_in(a12_cout),     .Sum(B1V[7:4]), .C_out(a11_cout));
-    assign B1V[8] = B1X8 ^ a11_cout;
+    // logic a12_cout;
+    // ttl_74283_nodly a12 (.A(B1X[3:0]),    .B(X[3:0]), .C_in(1'b0),         .Sum(B1V[3:0]), .C_out(a12_cout));
+    // logic a11_cout;
+    // ttl_74283_nodly a11 (.A(B1X[7:4]),    .B(X[7:4]), .C_in(a12_cout),     .Sum(B1V[7:4]), .C_out(a11_cout));
+    // assign B1V[8] = B1X8 ^ a11_cout;
+
+    //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
+    logic [8:0] const_minus40d; //a2 complement of 0x28 (-40 decimal value)  
+    assign const_minus40d = (hack_settings[0]) ? 9'b1_1101_1000 : 9'b0_0000_0000;
+    assign B1V = {B1X8,B1X} + {1'b0,X} + const_minus40d; //B1X - X - 28h
+    //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
 
     //2:1 Back1 SRAM bus addresses MUX
     //ttl_74157 A_2D({B3,A3,B2,A2,B1,A1,B0,A0})

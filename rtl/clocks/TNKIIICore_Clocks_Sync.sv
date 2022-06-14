@@ -35,6 +35,10 @@ module TNKIIICore_Clocks_Sync(
     input wire FSX, //SELECT FRONT SCROLL X REGISTER???
     input wire FX8, //from BACK1 VIDEO???
     input wire [7:0] VD_in, //VD data bus
+
+    //HACK interface
+    input wire [7:0] hack_settings,
+
     //clocks
     output logic CK0,
     output logic CK0n,
@@ -328,13 +332,19 @@ module TNKIIICore_Clocks_Sync(
 
     ttl_74273_sync b13(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(FSX), .D(vdin_r), .Q(B13_Q)); //RESET HACK
 
-    logic A14_cout;
-    ttl_74283_nodly a14 (.A(B13_Q[3:0]), .B(X[3:0]), .C_in(1'b0), .Sum(FV[3:0]), .C_out(A14_cout));
+    // logic A14_cout;
+    // ttl_74283_nodly a14 (.A(FX[3:0]), .B(X[3:0]), .C_in(1'b0), .Sum(FV[3:0]), .C_out(A14_cout));
     
-    logic A13_cout;
-    ttl_74283_nodly a13 (.A(B13_Q[7:4]), .B(X[7:4]), .C_in(A14_cout), .Sum(FV[7:4]), .C_out(A13_cout));
+    // logic A13_cout;
+    // ttl_74283_nodly a13 (.A(FX[7:4]), .B(X[7:4]), .C_in(A14_cout), .Sum(FV[7:4]), .C_out(A13_cout));
     
-    assign FV[8] = FX8 ^ A13_cout; //C11c XOR gate
+    // assign FV[8] = FX8 ^ A13_cout; //C11c XOR gate
+
+    //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
+    logic [8:0] const_minus40d; //a2 complement of 0x28 (-40 decimal value)  
+    assign const_minus40d = (hack_settings[0]) ? 9'b1_1101_1000 : 9'b0_0000_0000;
+    assign FV = {FX8,B13_Q} + {1'b0,X} + const_minus40d; //FX - X - 28h
+    //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
 
     //-----------------------------------
     //--- CPU synchronization signals ---
@@ -394,7 +404,7 @@ module TNKIIICore_Clocks_Sync(
     assign a3_2 = ~(&H[2:0]); 
     //assign a3_2 = (|H[2:0]); //HACK: to delay a3_2 one H0 cycle, zero when all H[2:0] equal to zero, RELATED TO BACKGROUND LEFT OFFSET???
     
-    logic C3_2_Q; //C3_2_Qn;
+    logic C3_2_Q; //C3_2_Qn;C3_1_Qn
     // ttl_7474 #(.BLOCKS(1), .DELAY_RISE(16), .DELAY_FALL(16)) c3_2
     // (.Clear_bar(1'b1), .Preset_bar(1'b1), .D(a3_2), .Clk(CK1n), .Q(C3_2_Q)); //.Q_bar(C3_2_Qn) check on schematic that is not used
     DFF_pseudoAsyncClrPre #(.W(1)) c3_2 (
@@ -480,7 +490,6 @@ module TNKIIICore_Clocks_Sync(
     );
 
     assign G15_BE_CK = ~(AB_Sel  & G15_CE); //AB_Sel=1 B
-
 
     //*************************************************
     //*** CPU A & B AND VIDEO RAM CONTROL SIGNALS   ***

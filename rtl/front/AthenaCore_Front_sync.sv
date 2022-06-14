@@ -16,6 +16,10 @@ module AthenaCore_Front_sync(
     input wire [10:0] VA,
     input wire [7:0] VD_in,
     output logic [7:0] VD_out,
+
+    //HACK settings
+    input wire [7:0] hack_settings,
+
     //hps_io rom interface
 	input wire         [24:0] ioctl_addr,
 	input wire         [7:0] ioctl_data,
@@ -196,7 +200,7 @@ module AthenaCore_Front_sync(
         .Clk(clk),
         .Cen(FCK),
         .Clr_n(1'b1),
-        .D({G5_Q[7:6],G5_Q[3:0]}),
+        .D({G5_Q[7],G5_Q[6],G5_Q[3:0]}),
         .Q({FL_Y[8],Spr_bank,Spr_color_bank})
     );
 
@@ -219,14 +223,6 @@ module AthenaCore_Front_sync(
 
     logic [3:0] e4_sum;
     ttl_74283_nodly e4 (.A(FV[3:0]), .B(X_offset[3:0]), .C_in(1'b1), .Sum(e4_sum), .C_out(e4_cout));
-
-    //Sprite X flip, TNKIII
-    // logic [3:0] e4_flip;
-    // generate
-    //     for(i=0; i<4; i++) begin : x_flip_gen
-    //         assign e4_flip[i] = e4_sum[i] ^ Spr_XFlip;
-    //     end
-    // endgenerate
 
     logic e6_B;
     assign e6_B = &e5_sum;
@@ -274,9 +270,12 @@ module AthenaCore_Front_sync(
 	wire P9_E7_cs  = (ioctl_addr >= 25'h70_000) & (ioctl_addr < 25'h78_000);
 
     logic [7:0] H7_D, H7_Dout; //On PCB pulled to Vcc with 4.7Kx8 RA7
+
+    // logic HACK_FCK;
+    // assign HACK_FCK = (hack_settings[0]) ? ~FCK : FCK;
     eprom_32K P7_H7
     (
-        .ADDR({SPR_ROM_BANK_MSB,Spr_bank,G7_Q,E8_Q[3:0],FCK}),
+        .ADDR({SPR_ROM_BANK_MSB,Spr_bank,G7_Q,E8_Q[3:0],FCK}), //HACK SETTTINGS 
         .CLK(clk),
         .DATA(H7_Dout),
         .ADDR_DL(ioctl_addr),
@@ -291,7 +290,7 @@ module AthenaCore_Front_sync(
     logic [7:0] F7_D, F7_Dout; //On PCB pulled to Vcc with 4.7Kx8 RA6
     eprom_32K P8_F7
     (
-        .ADDR({SPR_ROM_BANK_MSB,Spr_bank,G7_Q,E8_Q[3:0],FCK}),
+        .ADDR({SPR_ROM_BANK_MSB,Spr_bank,G7_Q,E8_Q[3:0],FCK}), //HACK SETTTINGS 
         .CLK(clk),
         .DATA(F7_Dout),
         .ADDR_DL(ioctl_addr),
@@ -305,7 +304,7 @@ module AthenaCore_Front_sync(
     logic [7:0] E7_D,E7_Dout; //On PCB pulled to Vcc with 4.7Kx8 RA5
     eprom_32K P9_E7
     (
-        .ADDR({SPR_ROM_BANK_MSB,Spr_bank,G7_Q,E8_Q[3:0],FCK}),
+        .ADDR({SPR_ROM_BANK_MSB,Spr_bank,G7_Q,E8_Q[3:0],FCK}), //HACK SETTTINGS 
         .CLK(clk),
         .DATA(E7_Dout),
         .ADDR_DL(ioctl_addr),
@@ -320,15 +319,16 @@ module AthenaCore_Front_sync(
 //    always @(posedge clk) begin
 //       LD_reg <= LD; 
 //    end
-    PLSO_shift g10 (.RESETn(VIDEO_RSTn), .CLK(clk), .CEN(~CK0), .LOADn(LD), .SI(1'b1), .D(H7_D), .SO(FD[0])); //Hack CLK should be CK0
-    PLSO_shift g9  (.RESETn(VIDEO_RSTn), .CLK(clk), .CEN(~CK0), .LOADn(LD), .SI(1'b1), .D(F7_D),  .SO(FD[1])); //Hack CLK should be CK0
-    PLSO_shift g8  (.RESETn(VIDEO_RSTn), .CLK(clk), .CEN(~CK0), .LOADn(LD), .SI(1'b1), .D(E7_D),  .SO(FD[2])); //Hack CLK should be CK0
+    PLSO_shift g10 (.RESETn(VIDEO_RSTn), .CLK(clk), .CEN(~CK0), .LOADn(LD), .SI(1'b1), .D(H7_D), .SO(FD[0]), .DIR(0)); //Hack CLK should be CK0, HACKED settings DIR
+    PLSO_shift g9  (.RESETn(VIDEO_RSTn), .CLK(clk), .CEN(~CK0), .LOADn(LD), .SI(1'b1), .D(F7_D), .SO(FD[1]), .DIR(0)); //Hack CLK should be CK0
+    PLSO_shift g8  (.RESETn(VIDEO_RSTn), .CLK(clk), .CEN(~CK0), .LOADn(LD), .SI(1'b1), .D(E7_D), .SO(FD[2]), .DIR(0)); //Hack CLK should be CK0
 endmodule
 
-module PLSO_shift (RESETn, CLK, CEN, LOADn, SI, D, SO); 
+module PLSO_shift (RESETn, CLK, CEN, LOADn, SI, D, SO, DIR); 
     input wire RESETn, CLK, CEN, SI, LOADn; 
     input wire [7:0] D; 
     output wire SO;
+    input wire DIR;
 
     reg [7:0] tmp; 
     reg last_cen;
@@ -344,10 +344,11 @@ module PLSO_shift (RESETn, CLK, CEN, LOADn, SI, D, SO);
 
             if (CEN && !last_cen) begin
                 if (!LOADn) tmp <= D; 
-                else        tmp <= {tmp[6:0], SI};
+                else if (DIR) tmp <= {SI, tmp[7:1]};
+                else          tmp <= {tmp[6:0], SI};
             end 
         end
     end 
 
-    assign SO = tmp[7]; 
+    assign SO = (DIR) ? tmp[0] : tmp[7]; 
 endmodule 

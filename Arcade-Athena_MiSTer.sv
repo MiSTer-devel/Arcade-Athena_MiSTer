@@ -207,7 +207,7 @@ assign VIDEO_ARY = (!ar) ? (orientation  ? 8'd3 : 8'd4) : 12'd0;
 // 0         1         2         3          4         5         6   
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X   XXX XXXX  XXXXXXX
+// X   XXX XXXX  XXXXXX
 `include "build_id.v" 
 localparam CONF_STR = {
 	"Athena;;",
@@ -228,6 +228,10 @@ localparam CONF_STR = {
 	"P2O[17],Back Layer,On,Off;",
 	"P2O[18],Front Layer,On,Off;",
 	"P2-;",
+	"P3,HACKS(Only for Upright cabinet);",
+	"P3-;",
+	"P3O[19],Core Screen Flip,Off,On;",
+	"P3-;",
 	"DIP;",
 	"-;",
 	"T[0],Reset;",
@@ -237,6 +241,18 @@ localparam CONF_STR = {
 	"DEFMRA,Athena.mra;",
 	"V,v",`BUILD_DATE 
 };
+
+//HACK SETTTINGS
+// "P3O[20],Reverse BACK1 Scroll X,Off,On;",
+// "P3O[21],Reverse BACK1 Scroll Y,Off,On;",
+// "P3O[22],Reverse FRONT Scroll X,Off,On;",
+// "P3O[23],Reverse FRONT Scroll Y,Off,On;",
+// "P3O[24],Reverse SPRT. Offset X,Off,On;",
+// "P3O[25],Reverse SPRT. Offset Y,Off,On;",
+wire [7:0] hack_settings;
+//assign hack_settings = {1'b1,status[25],status[24],status[23],status[22],status[21],status[20],status[19]};
+assign hack_settings = {7'b0000000,status[19]};
+
 
 wire        ioctl_download;
 wire        ioctl_upload;
@@ -267,32 +283,32 @@ wire [10:0] ps2_key;
 wire [15:0] joystick_0, joystick_1;
 
 //SNAC joysticks
-wire [1:0] SNAC_dev = status[20:19];
-wire         JOY_CLK, JOY_LOAD;
-wire         JOY_DATA  = (SNAC_dev == 2'd1) ? USER_IN[5] : '1;
+// wire [1:0] SNAC_dev = status[20:19];
+// wire         JOY_CLK, JOY_LOAD;
+// wire         JOY_DATA  = (SNAC_dev == 2'd1) ? USER_IN[5] : '1;
 
-always_comb begin
-	USER_OUT    = 8'hFF; 
+// always_comb begin
+// 	USER_OUT    = 8'hFF; 
 
-	if ((SNAC_dev == 2'd1) || (SNAC_dev == 2'd2)) begin
-		USER_OUT[0] = JOY_LOAD;
-		USER_OUT[1] = JOY_CLK;
-	end 
-end
+// 	if ((SNAC_dev == 2'd1) || (SNAC_dev == 2'd2)) begin
+// 		USER_OUT[0] = JOY_LOAD;
+// 		USER_OUT[1] = JOY_CLK;
+// 	end 
+// end
 
-wire [15:0] JOY_DB1 = (SNAC_dev == 2'd1) ? JOYDB15_1 : 16'd0;
-wire [15:0] JOY_DB2 = (SNAC_dev == 2'd2) ? JOYDB15_2 : 16'd0;
+// wire [15:0] JOY_DB1 = (SNAC_dev == 2'd1) ? JOYDB15_1 : 16'd0;
+// wire [15:0] JOY_DB2 = (SNAC_dev == 2'd2) ? JOYDB15_2 : 16'd0;
 
-wire [15:0] JOYDB15_1,JOYDB15_2;
-joy_db15 joy_db15
-(
-  .clk       ( clk_53p6  ), //53.6MHz
-  .JOY_CLK   ( JOY_CLK   ),
-  .JOY_DATA  ( JOY_DATA  ),
-  .JOY_LOAD  ( JOY_LOAD  ),
-  .joystick1 ( JOYDB15_1 ),
-  .joystick2 ( JOYDB15_2 )	  
-);
+// wire [15:0] JOYDB15_1,JOYDB15_2;
+// joy_db15 joy_db15
+// (
+//   .clk       ( clk_53p6  ), //53.6MHz
+//   .JOY_CLK   ( JOY_CLK   ),
+//   .JOY_DATA  ( JOY_DATA  ),
+//   .JOY_LOAD  ( JOY_LOAD  ),
+//   .joystick1 ( JOYDB15_1 ),
+//   .joystick2 ( JOYDB15_2 )	  
+// );
 
 hps_io #(.CONF_STR(CONF_STR)) hps_io
 (
@@ -332,7 +348,7 @@ pause #(8,8,8,536) pause (
  //.OSD_STATUS(1'b0), //pause only on user defined button
  .clk_sys(clk_53p6),
  .reset(reset),
- .user_button((m_pause1 | m_pause2)),
+ .user_button((m_pause1 | m_pause2)), //active high signal
  .r(R8B),
  .g(G8B),
  .b(B8B),
@@ -400,6 +416,8 @@ AthenaCore snk_athena
 	.PLAYER1(PLAYER1),
 	.PLAYER2(PLAYER2),
 	.GAME(game), //default ASO (ASO,Alpha Mission, Arian Mission)
+	//HACK settings
+	.hack_settings(hack_settings),
 	//hps_io rom interface
 	.ioctl_addr(ioctl_addr[24:0]),
 	.ioctl_wr(ioctl_wr && rom_download),
@@ -477,6 +495,8 @@ wire m_service1;
 wire m_start1;
 wire m_coin1;
 wire m_pause1; //active high
+wire m_chl;
+wire m_chr;
 
 //Player 2
 wire m_up2;
@@ -505,6 +525,8 @@ wire m_pause2; //active high
 	assign m_coin1     = ~joystick_0[7];  
 	assign m_service1  = ~joystick_0[8];
 	assign m_pause1    =  joystick_0[9]; //active high
+	assign m_chl       =  joystick_0[10];
+	assign m_chr       =  joystick_0[11];
 	
 	assign m_up2       = ~joystick_1[3];
 	assign m_down2     = ~joystick_1[2];
@@ -517,6 +539,6 @@ wire m_pause2; //active high
 	assign m_service2  = ~joystick_1[8];
 	assign m_pause2    =  joystick_1[9]; //active high
 
-assign PLAYER1 = {2'b11,m_up1,m_down1,m_right1,m_left1,m_service1,5'b11111,m_btn2_1,m_btn1_1,m_start1,m_coin1};
+assign PLAYER1 = {m_chl,m_chr,m_up1,m_down1,m_right1,m_left1,m_service1,5'b11111,m_btn2_1,m_btn1_1,m_start1,m_coin1};
 assign PLAYER2 = {2'b11,m_up2,m_down2,m_right2,m_left2,m_service2,5'b11111,m_btn2_2,m_btn1_2,m_start2,m_coin2};
 endmodule

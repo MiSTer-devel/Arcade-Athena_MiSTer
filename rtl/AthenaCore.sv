@@ -15,6 +15,10 @@ module AthenaCore
     input wire [7:0] GAME,
     input wire [15:0] DSW,
     output wire player_ctrl_clk,
+
+    //HACK interface
+    input wire [7:0] hack_settings,
+
     //hps_io rom interface
 	input wire         [24:0] ioctl_addr,
 	input wire         [7:0] ioctl_data,
@@ -22,6 +26,7 @@ module AthenaCore
 
     //layer dbg interfacee
     input wire [2:0] layer_ena_dbg, //0x4 Front layer enabled, 0x2 Back1 layer enabled, 0x1 Side layer enabled
+
     //output video signals
     output logic [3:0] R,
     output logic [3:0] G,
@@ -142,6 +147,8 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
     .INVn(INVn), //replace for INVn
     .FSX(FSX),
     .FX8(FX8), //replace for FX8
+    //HACK INTERFACE
+    .hack_settings(hack_settings),
     .VD_in(VD_in),
     .VRD(VRD), //replace for VRD
     .AE(AE), //replace for AE
@@ -285,7 +292,15 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
     logic COIN1_CNT, COIN2_CNT;
     logic SIDE_ROM_BK;
     logic [7:0] FY;
-    AthenaCore_Registers_sync amc_registers(
+
+    //*** START HACK: ATHENA SCREEN FLIP ***
+    logic HACK_INV;
+    logic HACK_INVn;
+    assign INV = ((hack_settings[0])) ? ~HACK_INV : HACK_INV;
+    assign INVn = (hack_settings[0]) ? ~HACK_INVn : HACK_INVn;
+    //*** END HACK: ATHENA SCREEN FLIP ***
+
+    AthenaCore_Registers_sync athena_registers(
         .VIDEO_RSTn(VIDEO_RSTn),
         .reset(VIDEO_RSTn),
         //.reset(1'b1), //*** ONLY FOR DEBUGGING PURPOUSES ***
@@ -294,8 +309,8 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
         .VD_in(VD_in), //VD data bus
 
         //Register MSB bits 5,4,3,1,0
-        .INV(INV), //Flip screen, in real pcb two LS368 chained gates
-        .INVn(INVn),
+        .INV(HACK_INV), //Flip screen, in real pcb two LS368 chained gates
+        .INVn(HACK_INVn),
         .SIDE_ROM_BK(SIDE_ROM_BK),
         .B1X8(B1X8),
         .FX8(FX8),
@@ -383,6 +398,9 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
         //common video data bus
         .VD_in(VD_in),
         .VD_out(back1_vout),
+
+        //HACK interface
+        .hack_settings(hack_settings),
         //hps_io rom interface
         .ioctl_addr(ioctl_addr[19:0]),
         .ioctl_wr(ioctl_wr),
@@ -436,6 +454,8 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
         //common video data bus
         .VD_in(VD_in),
         .VD_out(front_vout),
+        //hack interface
+        .hack_settings(hack_settings),
         //hps_io rom interface
         .ioctl_addr(ioctl_addr[19:0]),
         .ioctl_wr(ioctl_wr),
@@ -487,6 +507,8 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
         .LD(LD),
         .FL_Y(FL_Y), //comes from FRONT output
         .HLD(HLDn),
+        //hack interface
+        .hack_settings(hack_settings),
         .FY8(FYocho),
         .FY(FY),
         .INVn(INVn),

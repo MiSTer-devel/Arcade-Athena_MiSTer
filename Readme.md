@@ -15,7 +15,7 @@ This core as beta release will be published as independet core. Finally will be 
 
 ## Instructions:
 This game is multiplayer, where two players can play taking turns with their own controllers. You have two action buttons for jump and attack and the 8-way joystick. As in the rest of the SNK Triple Z80 cores you have buttons for service and pause.
-![gamepad buttons](/docs/Athena_buttons.jpg)
+![gamepad buttons](/docs/Athena_btn_map.jpg)
 
 ## Hack Flip Screen settings:
 Athena does not include in the DIP settings an option to flip the screen (although it does include a Cocktail mode). Due to the fact that the default position of the screen in a CRT appears inverted and due to the request of several users I have included an experimental way to invert the screen internally in the core (Athena OSD: HACKS (Only for Upright cabinet) > Core Screen Flip: Off, On), oriented to users that use CRT screens with the native resolution and they cannot take advantage of screen rotation and other MiSTer framework features available for HDMI or VGA output with scaler enabled to change screen orientation. This feature is not included in the original hardware and is not intensively tested, so graphical errors may occur while it is activated. Its use is not necessary if you use MiSTer with the HDMI or VGA video output with the scaler activated. Do not activate in Cocktail mode as it will not be displayed correctly.

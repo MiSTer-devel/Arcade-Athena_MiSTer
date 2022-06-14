@@ -14,7 +14,7 @@ This core as beta release will be published as independet core. Finally will be 
 * Based on Tim Rudy 7400 TTL library [https://github.com/TimRudy/ice-chips-verilog](https://github.com/TimRudy/ice-chips-verilog).
 
 ## Instructions:
-This game is multiplayer, where two players can play taking turns with their own controllers. You have two action buttons for jump and attack and the 8-way joystick. As in the rest of the SNK Triple Z80 cores you have buttons for service and pause.
+This game is multiplayer, where two players can play taking turns with their own controllers. You have two action buttons for jump and attack and the 8-way joystick. As in the rest of the SNK Triple Z80 cores you have buttons for service and pause. Recomended gamepad button assignments:
 ![gamepad buttons](/docs/Athena_btn_map.jpg)
 
 ## Hack Flip Screen settings:

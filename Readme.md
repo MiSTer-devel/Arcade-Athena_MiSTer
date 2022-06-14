@@ -31,7 +31,7 @@ The required ROM files follow the MAME naming conventions (check inside MRA for 
 * __@topapate__ for general advice with the JTOPL core.
 * __@FCochise__ for helping with the rom settings of MRA files.
 * __@alanswx__ for helping me with some technical aspects related to the use of the MiSTer framework.
-* Ko-fi supporters: bdlou, schermobianco, Nat, David, Peter Bray, Kevin Coleman.
+* __Ko-fi supporters__: __bdlou__, __schermobianco__, __Nat__, __David__, __Peter Bray__, __Kevin Coleman__.
 * And all those who with their comments and shows of support have encouraged me to continue with this project.
 
 

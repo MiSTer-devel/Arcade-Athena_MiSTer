@@ -72,6 +72,12 @@
 		<part crc="a4a4e7dc" name="1.1c"/>
 		<!-- Athena Invincibility ROM Patch -->
 		<!-- <patch offset="0x10918">C3</patch> -->
+
+		<!-- Athena Flip Screen Fix ROM Patch -->
+		<!-- Patch thanks to Junoman http://junofirst.com/ -->
+		<patch offset="0x0029e">48</patch>
+		<patch offset="0x002a4">3E</patch>
+
 	</rom>
 	<rom index="1">
 		<part>02</part>

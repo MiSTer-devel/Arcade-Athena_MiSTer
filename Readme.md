@@ -17,8 +17,18 @@ This core as beta release will be published as independet core. Finally will be 
 This game is multiplayer, where two players can play taking turns with their own controllers. You have two action buttons for jump and attack and the 8-way joystick. As in the rest of the SNK Triple Z80 cores you have buttons for service and pause. Recomended gamepad button assignments:
 ![gamepad buttons](/docs/Athena_btn_map.jpg)
 
-## Hack Flip Screen settings:
-Athena does not include in the DIP settings an option to flip the screen (although it does include a Cocktail mode). Due to the fact that the default position of the screen in a CRT appears inverted and due to the request of several users I have included an experimental way to invert the screen internally in the core (Athena OSD: HACKS (Only for Upright cabinet) > Core Screen Flip: Off, On), oriented to users that use CRT screens with the native resolution and they cannot take advantage of screen rotation and other MiSTer framework features available for HDMI or VGA output with scaler enabled to change screen orientation. This feature is not included in the original hardware and is not intensively tested, so graphical errors may occur while it is activated. Its use is not necessary if you use MiSTer with the HDMI or VGA video output with the scaler activated. Do not activate in Cocktail mode as it will not be displayed correctly.
+## Flip Screen settings:
+Athena does not include in the DIP settings an option to flip the screen (although it does include a Cocktail mode). Due to the fact that the default position of the screen in a screen appears inverted
+Now you have two options to fix this:
+* Using the non-patched Athena MRA (Athena.MRA) with core hardware settings options:
+	* For HDMI or/and VGA with scaler activated users (uses MiSTer framework support): `Athena Core OSD options: other settings > Flip: Off, On`. Save settings and reload (not merely apply a reset) the Core.
+	* For CRT users (raw core video ouput without MiSTer framework support): `Athena Core OSD options: HACKS (Only for Upright cabinet) > Core Screen Flip: Off, On`. Save settings.
+	Note: you can have both video outputs active at the same time, then you could need to activate both depending on the characteristics of your screen.
+
+* Using the JunoMan's patched MRA (_alternatives/_Athena/Athena_Screen_Flip_Fix_ROM_Patch.mra):
+Simply load the core using said MRA file and do not touch any of the core OSD options related to flipping the screen or disable them if they were previously active. Important saving the settings after any change or reloading the core will not apply.
+
+Note: Do not activate screen flip settings or patch in Cocktail mode as it will not be displayed correctly.
 
 ## Manual installation
 Rename the Arcade-Athena_XXXXXXXX.rbf file to Athena_XXXXXXXX.rbf and copy to the SD Card to the folder  /media/fat/_Arcade/cores and the .MRA files to /media/fat/_Arcade.

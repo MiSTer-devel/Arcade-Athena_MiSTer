@@ -17,7 +17,8 @@ module AthenaCore_CPU_A_B_sync
     input  wire RESETn,
     input wire [15:0] PLAYER1,
     input wire [15:0] PLAYER2,
-	 input wire [15:0] DSW,
+	input wire [15:0] DSW,
+    input wire [7:0] GAME,
     input  wire VBL,
     input  wire BWA,
     input  wire A_B,
@@ -286,8 +287,8 @@ module AthenaCore_CPU_A_B_sync
         else if(!P2)                                   cpuA_Din <= {2'b11,PLAYER2[3],PLAYER2[2],PLAYER2[11],PLAYER2[10],PLAYER2[12],PLAYER2[13]}; //Player2 inputs:{UNK,UNK,BTN2,BTN1,RIGHT,LEFT,DOWN,UP}
         else if(!P1_P2)                                cpuA_Din <= {8'hff};  // P1/P2 Buttons:{UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK}
         //Check Athena.mra for understand DIP1 and DIP2 bit swaps
-        else if(!DIP1)                                 cpuA_Din <= {DSW[7:3],DSW[12],DSW[1:0]}; //DIP1 Switches 
-        else if(!DIP2)                                 cpuA_Din <= {DSW[15],1'b1,DSW[14:13],DSW[11:8]}; //DIP2 Switches
+        else if(!DIP1)                                 cpuA_Din <= (GAME == 8'd4) ? DSW[7:0] : {DSW[7:3],DSW[12],DSW[1:0]}; //DIP1 Switches 
+        else if(!DIP2)                                 cpuA_Din <= (GAME == 8'd4) ? DSW[15:8] : {DSW[15],1'b1,DSW[14:13],DSW[11:8]}; //DIP2 Switches
         else if(!cpuB_NMI_TRIG_R_cpuA_NMI_ACK_W_CTRL)  cpuA_Din <= 8'hFF; //C700 Read
         //VIDEO RAM & Regs.      
         else if(!VD_to_cpuAdbus)                       cpuA_Din <= cpuA_Vin;

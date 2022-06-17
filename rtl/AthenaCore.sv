@@ -212,6 +212,7 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
         .RESETn(VIDEO_RSTn),
         .PLAYER1(PLAYER1),
         .PLAYER2(PLAYER2),
+        .GAME(GAME),
         .DSW(DSW),
         .VBL(VBL),
         .BWA(BWA),

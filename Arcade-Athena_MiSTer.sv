@@ -208,6 +208,8 @@ assign VIDEO_ARY = (!ar) ? (orientation  ? 8'd3 : 8'd4) : 12'd0;
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
 // X   XXX XXXX  XXXXXX
+	// "P3O[23:20],B1Voffset,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15;",
+	// "P3O[24],Swap PX,Off,On;",
 `include "build_id.v" 
 localparam CONF_STR = {
 	"Athena;;",
@@ -230,8 +232,12 @@ localparam CONF_STR = {
 	"P2-;",
 	"P3,HACKS(Only for Upright cabinet);",
 	"P3-;",
-	"P3O[19],Core Screen Flip,Off,On;",
+	"D0P3O[19],Core Screen Flip,Off,On;",
 	"P3-;",
+	"P4,SNAC;",
+	"P4-;",
+	"P4O[21:20],DB15 Devices,Off,OnlyP1,OnlyP2,P1&P2;",
+	"P4-;",
 	"DIP;",
 	"-;",
 	"T[0],Reset;",
@@ -252,6 +258,11 @@ localparam CONF_STR = {
 wire [7:0] hack_settings;
 //assign hack_settings = {1'b1,status[25],status[24],status[23],status[22],status[21],status[20],status[19]};
 assign hack_settings = {7'b0000000,status[19]};
+
+// wire [3:0] dbg_B1Voffset = status[23:20];
+// wire swap_px = status[24];
+wire [3:0] dbg_B1Voffset = 4'b0011;
+wire swap_px = 1'b1;
 
 
 wire        ioctl_download;
@@ -278,37 +289,52 @@ end
 
 wire  [1:0] buttons;
 wire [127:0] status;
+logic [15:0] status_menumask;
 wire [10:0] ps2_key;
 
 wire [15:0] joystick_0, joystick_1;
 
 //SNAC joysticks
-// wire [1:0] SNAC_dev = status[20:19];
-// wire         JOY_CLK, JOY_LOAD;
-// wire         JOY_DATA  = (SNAC_dev == 2'd1) ? USER_IN[5] : '1;
+wire [1:0] SNAC_dev = status[21:20];
+wire         JOY_CLK, JOY_LOAD;
+wire         JOY_DATA  = USER_IN[5];
 
-// always_comb begin
-// 	USER_OUT    = 8'hFF; 
+always_comb begin
+	USER_OUT[0] = JOY_LOAD;
+	USER_OUT[1] = JOY_CLK;
+	USER_OUT[2] = 1'b1;
+	USER_OUT[3] = 1'b1;
+	USER_OUT[4] = 1'b1;
+	USER_OUT[5] = 1'b1;
+	USER_OUT[6] = 1'b1;
+end
 
-// 	if ((SNAC_dev == 2'd1) || (SNAC_dev == 2'd2)) begin
-// 		USER_OUT[0] = JOY_LOAD;
-// 		USER_OUT[1] = JOY_CLK;
-// 	end 
-// end
+wire [15:0] JOYDB15_1,JOYDB15_2;
+joy_db15 joy_db15
+(
+  .clk       ( clk_53p6  ), //53.6MHz
+  .JOY_CLK   ( JOY_CLK   ),
+  .JOY_DATA  ( JOY_DATA  ),
+  .JOY_LOAD  ( JOY_LOAD  ),
+  .joystick1 ( JOYDB15_1 ),
+  .joystick2 ( JOYDB15_2 )	  
+);
 
-// wire [15:0] JOY_DB1 = (SNAC_dev == 2'd1) ? JOYDB15_1 : 16'd0;
-// wire [15:0] JOY_DB2 = (SNAC_dev == 2'd2) ? JOYDB15_2 : 16'd0;
+wire [15:0] JOY_DB1;
+wire [15:0] JOY_DB2;
+always_comb begin
+	if ((SNAC_dev[0] == 1'b1)) begin
+		JOY_DB1 = JOYDB15_1;
+	end else begin
+		JOY_DB1 = 16'hff;
+	end
 
-// wire [15:0] JOYDB15_1,JOYDB15_2;
-// joy_db15 joy_db15
-// (
-//   .clk       ( clk_53p6  ), //53.6MHz
-//   .JOY_CLK   ( JOY_CLK   ),
-//   .JOY_DATA  ( JOY_DATA  ),
-//   .JOY_LOAD  ( JOY_LOAD  ),
-//   .joystick1 ( JOYDB15_1 ),
-//   .joystick2 ( JOYDB15_2 )	  
-// );
+	if ((SNAC_dev[1] == 1'b1)) begin
+		JOY_DB2 = JOYDB15_2;
+	end else begin
+		JOY_DB2 = 16'hff;
+	end
+end
 
 hps_io #(.CONF_STR(CONF_STR)) hps_io
 (
@@ -319,7 +345,7 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 	.forced_scandoubler(),
 	.buttons(buttons),
 	.status(status),
-	.status_menumask(direct_video),
+	.status_menumask(status_menumask),
 	.direct_video(direct_video),
    .forced_scandoubler(forced_scandoubler),
    .gamma_bus(gamma_bus),
@@ -423,6 +449,8 @@ AthenaCore snk_athena
 	.ioctl_wr(ioctl_wr && rom_download),
 	.ioctl_data(ioctl_dout),
 	.layer_ena_dbg(layer_ena_dbg),
+	.dbg_B1Voffset(dbg_B1Voffset),
+	.swap_px(swap_px),
 	//output
 	.R(R),
 	.G(G),
@@ -477,6 +505,8 @@ always @(posedge clk_53p6) begin
 		game <= ioctl_dout;
 	end
 end
+//Disable flip screen menu if the game is not Athena 
+assign status_menumask = (game == 8'h02) ? 16'h0 : 16'h1;
 
 logic [7:0] dsw1, dsw2;
 assign dsw1 = sw[0];
@@ -510,34 +540,32 @@ wire m_start2;
 wire m_coin2;
 wire m_pause2; //active high
 
+
 //custom_joy1:13 UP,12 DOWN,11 RIGHT,10 LEFT,9 H,8 G,7 F,6 E,5 D,4 C,3 B,2 A,1 START1,0 COIN
 //db15:        //    11 L, 10 S, 9 F, 8 E, 7 D, 6 C, 5 B, 4 A, 3 U, 2 D, 1 L, 0 R
 //    10 9876543210
 //----LS FEDCBAUDLR
-
-	assign m_up1       = ~joystick_0[3];
-	assign m_down1     = ~joystick_0[2];
-	assign m_left1     = ~joystick_0[1];
-	assign m_right1    = ~joystick_0[0];
-	assign m_btn1_1    = ~joystick_0[4];  
-	assign m_btn2_1    = ~joystick_0[5];  
-	assign m_start1    = ~joystick_0[6];  
-	assign m_coin1     = ~joystick_0[7];  
-	assign m_service1  = ~joystick_0[8];
-	assign m_pause1    =  joystick_0[9]; //active high
-	assign m_chl       =  joystick_0[10];
-	assign m_chr       =  joystick_0[11];
+	assign m_up1       = (SNAC_dev[0]) ? ~JOY_DB1[3]  : ~joystick_0[3];
+	assign m_down1     = (SNAC_dev[0]) ? ~JOY_DB1[2]  : ~joystick_0[2];
+	assign m_left1     = (SNAC_dev[0]) ? ~JOY_DB1[1]  : ~joystick_0[1];
+	assign m_right1    = (SNAC_dev[0]) ? ~JOY_DB1[0]  : ~joystick_0[0];
+	assign m_btn1_1    = (SNAC_dev[0]) ? ~JOY_DB1[5]  : ~joystick_0[4]; //DB15 (NeoGeo): B , LS30 (Custom) A
+	assign m_btn2_1    = (SNAC_dev[0]) ? ~JOY_DB1[6]  : ~joystick_0[5]; //DB15 (NeoGeo): C , LS30 (Custom) B
+	assign m_start1    = (SNAC_dev[0]) ? ~JOY_DB1[10] : ~joystick_0[6]; //DB15 (NeoGeo): Start
+	assign m_coin1     = (SNAC_dev[0]) ? ~JOY_DB1[11] : ~joystick_0[7]; //DB15 (NeoGeo): Select 
+	assign m_service1  = (SNAC_dev[0]) ?  ~(JOY_DB1[5] & JOY_DB1[11]) : ~joystick_0[8]; //DB15 (NeoGeo): Select+B
+	assign m_pause1    = (SNAC_dev[0]) ?   (JOY_DB1[4] & JOY_DB1[11]) :  joystick_0[9]; //DB15 (NeoGeo): Select+A
 	
-	assign m_up2       = ~joystick_1[3];
-	assign m_down2     = ~joystick_1[2];
-	assign m_left2     = ~joystick_1[1];
-	assign m_right2    = ~joystick_1[0];
-	assign m_btn1_2    = ~joystick_1[4];  
-	assign m_btn2_2    = ~joystick_1[5];  
-	assign m_start2    = ~joystick_1[6];  
-	assign m_coin2     = ~joystick_1[7];  
-	assign m_service2  = ~joystick_1[8];
-	assign m_pause2    =  joystick_1[9]; //active high
+	assign m_up2       = (SNAC_dev[1]) ? ~JOY_DB2[3]  : ~joystick_1[3];
+	assign m_down2     = (SNAC_dev[1]) ? ~JOY_DB2[2]  : ~joystick_1[2];
+	assign m_left2     = (SNAC_dev[1]) ? ~JOY_DB2[1]  : ~joystick_1[1];
+	assign m_right2    = (SNAC_dev[1]) ? ~JOY_DB2[0]  : ~joystick_1[0];
+	assign m_btn1_2    = (SNAC_dev[1]) ? ~JOY_DB2[5]  : ~joystick_1[4]; //DB15 (NeoGeo): B , LS30 (Custom) A
+	assign m_btn2_2    = (SNAC_dev[1]) ? ~JOY_DB2[6]  : ~joystick_1[5]; //DB15 (NeoGeo): C , LS30 (Custom) B
+	assign m_start2    = (SNAC_dev[1]) ? ~JOY_DB2[10] : ~joystick_1[6]; //DB15 (NeoGeo): Start
+	assign m_coin2     = (SNAC_dev[1]) ? ~JOY_DB2[11] : ~joystick_1[7]; //DB15 (NeoGeo): Select 
+	assign m_service2  = (SNAC_dev[1]) ?  ~(JOY_DB2[5] & JOY_DB2[11]) : ~joystick_1[8]; //DB15 (NeoGeo): Select+B
+	assign m_pause2    = (SNAC_dev[1]) ?   (JOY_DB2[4] & JOY_DB2[11]) :  joystick_1[9]; //DB15 (NeoGeo): Select+A
 
 assign PLAYER1 = {m_chl,m_chr,m_up1,m_down1,m_right1,m_left1,m_service1,5'b11111,m_btn2_1,m_btn1_1,m_start1,m_coin1};
 assign PLAYER2 = {2'b11,m_up2,m_down2,m_right2,m_left2,m_service2,5'b11111,m_btn2_2,m_btn1_2,m_start2,m_coin2};

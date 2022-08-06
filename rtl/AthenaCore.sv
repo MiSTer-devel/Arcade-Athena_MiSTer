@@ -26,6 +26,8 @@ module AthenaCore
 
     //layer dbg interfacee
     input wire [2:0] layer_ena_dbg, //0x4 Front layer enabled, 0x2 Back1 layer enabled, 0x1 Side layer enabled
+    input wire [3:0] dbg_B1Voffset,
+    input wire swap_px,
 
     //output video signals
     output logic [3:0] R,
@@ -402,6 +404,8 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
 
         //HACK interface
         .hack_settings(hack_settings),
+        .dbg_B1Voffset(dbg_B1Voffset),
+        .swap_px(swap_px),
         //hps_io rom interface
         .ioctl_addr(ioctl_addr[19:0]),
         .ioctl_wr(ioctl_wr),

@@ -165,13 +165,13 @@ module AthenaCore_Front_sync(
     ttl_74273_sync g2(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(VLK), .D(Dreg0), .Q(G2_Q));
     logic [7:0] Tile_num;
     //Sprite Tile Number
-    ttl_74273_sync g3(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(VLK), .D(Dreg1), .Q(Tile_num));
+    ttl_74273_sync g3(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(VLK), .D((!VCKn ? Dreg1 : 8'hff)), .Q(Tile_num));
     logic [7:0] Y_offset;
     //Sprite Y offset
     ttl_74273_sync g4(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(VLK), .D(Dreg2), .Q(Y_offset));
     logic [7:0] G5_Q;
     //Sprite attributes
-    ttl_74273_sync g5(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(VLK), .D(Dreg3), .Q(G5_Q));
+    ttl_74273_sync g5(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(VLK), .D((!VCKn ? Dreg3 : 8'hff)), .Q(G5_Q));
     
     logic [3:0] Spr_color_bank;
     logic X_offset_MSB;

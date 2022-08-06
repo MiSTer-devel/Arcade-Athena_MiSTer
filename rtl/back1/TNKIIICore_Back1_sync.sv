@@ -25,6 +25,8 @@ module TNKIIICore_Back1_sync(
 
     //HACK SETTINGS
     input wire [7:0] hack_settings,
+    input wire [3:0] dbg_B1Voffset, 
+    input wire swap_px,
     //MSBs
     input wire B1Y8,
     input wire B1X8,
@@ -91,9 +93,10 @@ module TNKIIICore_Back1_sync(
     logic c14_dum3;
     logic [1:0] c12_dum;
     //Y7~3 -> Y[4:0]
-    ttl_74283_nodly c14 (.A({1'b1, B1Y[2:0]}),    .B({1'b1, H2,H1,H0}), .C_in(1'b0),     .Sum({c14_dum3,B1H[2:0]}),           .C_out()        );
-    // logic c13_cout;
-    // ttl_74283_nodly c13 (.A(B1Y[6:3]),            .B(Y[3:0]),           .C_in(1'b0),     .Sum(B1H[6:3]),                      .C_out(c13_cout));
+    ttl_74283_nodly c14 (.A({1'b1, B1Y[2:0]}),    .B({1'b1, H2,H1,H0}), .C_in(1'b0),     .Sum({c14_dum3,B1H[2:0]}),           .C_out()        );//TNKIII changes with respecto to AlphaMission, C_in = 1'b1
+    //assign B1H[2:0] = {H2,H1,H0} + B1Y[2:0] - dbg_B1Voffset;
+    //logic c13_cout;
+    // ttl_74283_nodly c13 (.A(B1Y[6:3]),            .B(Y[3:0]),           .C_in(1'b0),     .Sum(B1H[6:3]),                      .C_out(c13_cout)); //TNKIII changes with respecto to AlphaMission C_in = 1'b1
     // ttl_74283_nodly c12 (.A({2'b11,B1Y8,B1Y[7]}), .B({2'b11, H8,Y[4]}), .C_in(c13_cout), .Sum({c12_dum,B1H[8:7]}),            .C_out()        );
 
     //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
@@ -114,6 +117,7 @@ module TNKIIICore_Back1_sync(
         .Reset_n(VIDEO_RSTn),
         .Clk(clk),
         .Cen(CK1n),
+        //.Cen(CK1), //HACK
         .Clr_n(1'b1),
         .D({3'b111,B1Hn}),
         .Q(d13_q)
@@ -126,6 +130,7 @@ module TNKIIICore_Back1_sync(
         .Reset_n(VIDEO_RSTn),
         .Clk(clk),
         .Cen(CK1n),
+        //.Cen(CK1), //HACK
         .Clr_n(1'b1),
         .D(B1H[8:3]),
         .Q(d12_q)
@@ -151,6 +156,7 @@ module TNKIIICore_Back1_sync(
     logic [8:0] const_minus40d; //a2 complement of 0x28 (-40 decimal value)  
     assign const_minus40d = (hack_settings[0]) ? 9'b1_1101_1000 : 9'b0_0000_0000;
     assign B1V = {B1X8,B1X} + {1'b0,X} + const_minus40d; //B1X - X - 28h
+    //assign B1V = {B1X8,B1X} + {1'b0,X} + {dbg_B1Voffset[2],dbg_B1Voffset[2],dbg_B1Voffset[2],dbg_B1Voffset[2],dbg_B1Voffset[2],dbg_B1Voffset[2],dbg_B1Voffset[2],dbg_B1Voffset[1],dbg_B1Voffset[0]};
     //*** HACK SETTINGS FOR SCREEN FLIP INSIDE CORE ***
 
     //2:1 Back1 SRAM bus addresses MUX
@@ -348,15 +354,96 @@ module TNKIIICore_Back1_sync(
         .Q({a3_dummy,A3_Q[3:0]})
     );
 
+    logic [3:0] A3bis_Q,A3bis2_Q,A3bis3_Q,A3bis4_Q,A3bis5_Q,A3bis6_Q,A3bis7_Q,A3bis8_Q,A3bis9_Q,A3bis10_Q,A3bis11_Q,A3bis12_Q,A3bis13_Q,A3bis14_Q,A3bis15_Q;
+
+    always @(posedge clk) begin
+        A3bis2_Q <= A3_Q;
+        A3bis3_Q <= A3bis2_Q;
+        A3bis4_Q <= A3bis3_Q;
+        A3bis5_Q <= A3bis4_Q;
+        A3bis6_Q <= A3bis5_Q;
+        A3bis7_Q <= A3bis6_Q;
+        A3bis8_Q <= A3bis7_Q;
+        A3bis9_Q <= A3bis8_Q;
+        A3bis10_Q <= A3bis9_Q;
+        A3bis11_Q <= A3bis10_Q;
+        A3bis12_Q <= A3bis11_Q;
+        A3bis13_Q <= A3bis12_Q;
+        A3bis14_Q <= A3bis13_Q;
+        A3bis15_Q <= A3bis14_Q;
+    end
+
+    always_comb begin
+        case (dbg_B1Voffset)
+            4'b0000:  A3bis_Q = A3_Q;
+            4'b0001:  A3bis_Q = A3bis2_Q;
+            4'b0010:  A3bis_Q = A3bis3_Q;
+            4'b0011:  A3bis_Q = A3bis4_Q;
+            4'b0100:  A3bis_Q = A3bis5_Q;
+            4'b0101:  A3bis_Q = A3bis6_Q;
+            4'b0110:  A3bis_Q = A3bis7_Q;
+            4'b0111:  A3bis_Q = A3bis8_Q;
+            4'b1000:  A3bis_Q = A3bis9_Q;
+            4'b1001:  A3bis_Q = A3bis10_Q;
+            4'b1010:  A3bis_Q = A3bis11_Q;
+            4'b1011:  A3bis_Q = A3bis12_Q;
+            4'b1100:  A3bis_Q = A3bis13_Q;
+            4'b1101:  A3bis_Q = A3bis14_Q;
+            4'b1110:  A3bis_Q = A3bis15_Q;
+            default: A3bis_Q = A3_Q;    
+        endcase
+    end
+
     //In the TNKIII PCB schematics there is a jumper to connect B1D7 to B1_COLBK (default) or A3_Q3.
-    assign B1D[7] = (JMP_B1D7) ? B1_COLBK : A3_Q[3];
-    assign {B1D[6],B1D[5],B1D[4]} = {A3_Q[2],A3_Q[1],A3_Q[0]};
+    assign B1D[7] = (JMP_B1D7) ? B1_COLBK : A3bis_Q[3];
+    assign {B1D[6],B1D[5],B1D[4]} = {A3bis_Q[2],A3bis_Q[1],A3bis_Q[0]};
 
     logic [7:0] B2_Q;
     ttl_74273_sync B2(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(B1HQ[0]), .D(ROM_DATA), .Q(B2_Q));
+    logic [7:0] B2bis_Q,B2bis2_Q,B2bis3_Q,B2bis4_Q,B2bis5_Q,B2bis6_Q,B2bis7_Q,B2bis8_Q,B2bis9_Q,B2bis10_Q,B2bis11_Q,B2bis12_Q,B2bis13_Q,B2bis14_Q,B2bis15_Q;
+
+    always @(posedge clk) begin
+        B2bis2_Q <= B2_Q;
+        B2bis3_Q <= B2bis2_Q;
+        B2bis4_Q <= B2bis3_Q;
+        B2bis5_Q <= B2bis4_Q;
+        B2bis6_Q <= B2bis5_Q;
+        B2bis7_Q <= B2bis6_Q;
+        B2bis8_Q <= B2bis7_Q;
+        B2bis9_Q <= B2bis8_Q;
+        B2bis10_Q <= B2bis9_Q;
+        B2bis11_Q <= B2bis10_Q;
+        B2bis12_Q <= B2bis11_Q;
+        B2bis13_Q <= B2bis12_Q;
+        B2bis14_Q <= B2bis13_Q;
+        B2bis15_Q <= B2bis14_Q;
+    end
+
+    always_comb begin
+        case (dbg_B1Voffset)
+            4'b0000:  B2bis_Q = B2_Q;
+            4'b0001:  B2bis_Q = B2bis2_Q;
+            4'b0010:  B2bis_Q = B2bis3_Q;
+            4'b0011:  B2bis_Q = B2bis4_Q;
+            4'b0100:  B2bis_Q = B2bis5_Q;
+            4'b0101:  B2bis_Q = B2bis6_Q;
+            4'b0110:  B2bis_Q = B2bis7_Q;
+            4'b0111:  B2bis_Q = B2bis8_Q;
+            4'b1000:  B2bis_Q = B2bis9_Q;
+            4'b1001:  B2bis_Q = B2bis10_Q;
+            4'b1010:  B2bis_Q = B2bis11_Q;
+            4'b1011:  B2bis_Q = B2bis12_Q;
+            4'b1100:  B2bis_Q = B2bis13_Q;
+            4'b1101:  B2bis_Q = B2bis14_Q;
+            4'b1110:  B2bis_Q = B2bis15_Q;
+            default: B2bis_Q = B2_Q;    
+        endcase
+    end
+
+    // ttl_74273_sync B2bis(.RESETn(VIDEO_RSTn), .CLRn(1'b1), .Clk(clk), .Cen(CK1n), .D(B2_Q), .Q(B2bis_Q)); //HACK to add CK1 period delay to the data coming from ROM
 
     logic A2_S;
     assign A2_S = B1HQ[0] ^ INV; //IC 11D Unit C
-    ttl_74157 #(.DELAY_RISE(0), .DELAY_FALL(0)) A2 (.Enable_bar(1'b0), .Select(A2_S),
-                .A_2D({B2_Q[7],B2_Q[3],B2_Q[6],B2_Q[2],B2_Q[5],B2_Q[1],B2_Q[4],B2_Q[0]}), .Y(B1D[3:0]));
+    ttl_74157 #(.DELAY_RISE(0), .DELAY_FALL(0)) A2 (.Enable_bar(1'b0), .Select((swap_px ? ~A2_S : A2_S)),
+                .A_2D({B2bis_Q[7],B2bis_Q[3],B2bis_Q[6],B2bis_Q[2],B2bis_Q[5],B2bis_Q[1],B2bis_Q[4],B2bis_Q[0]}), .Y(B1D[3:0]));
 endmodule

@@ -518,10 +518,10 @@ always_ff @(posedge clk_53p6) begin
 	case (game)
 		8'h02 : status_menumask[0] <= 1'b0; //Enable Flip Screen Hack for Athena only games
 		8'h14 : begin
-			status_menumask[1] <= 1'b1; //Disable SNAC DB15 for Country Golf
+			status_menumask[1] <= 1'b1; //Disable SNAC DB15 for Country Club (trackball game)
 			 //status_menumask[2] <= 1'b0; //Enable TrackBall emulation settings for Country Golf
 		end
-		default: status_menumask <= 16'hff;
+		default: status_menumask <= 16'b1111_1101; //by default enable DB15 support
 	endcase
 end
 

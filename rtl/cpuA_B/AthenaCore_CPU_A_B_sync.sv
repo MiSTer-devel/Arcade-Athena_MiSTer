@@ -17,6 +17,8 @@ module AthenaCore_CPU_A_B_sync
     input  wire RESETn,
     input wire [15:0] PLAYER1,
     input wire [15:0] PLAYER2,
+    input wire [15:0] TRACKBALL1,
+    input wire [15:0] TRACKBALL2,
 	input wire [15:0] DSW,
     input wire [7:0] GAME,
     input  wire VBL,
@@ -217,11 +219,15 @@ module AthenaCore_CPU_A_B_sync
     //16'hC000 1 1 0 0  0 | 0 0 0 | x x x x  x x x x COIN                               R
     //16'hC100 1 1 0 0  0 | 0 0 1 | x x x x  x x x x P1                                 R
     //16'hC200 1 1 0 0  0 | 0 1 0 | x x x x  x x x x P2                                 R    
-    //16'hC300 1 1 0 0  0 | 0 1 1 | x x x x  x x x x P1_P2 Athena coin counter          W
+    //16'hC300 1 1 0 0  0 | 0 1 1 | x x x x  x x x x P1_P2 Athena coin counter          W / Country Club (select trackball 0 or 1)
     //16'hC400 1 1 0 0  0 | 1 0 0 | x x x x  x x x x MCODE                              W
     //16'hC500 1 1 0 0  0 | 1 0 1 | x x x x  x x x x DIP1                               R
     //16'hC600 1 1 0 0  0 | 1 1 0 | x x x x  x x x x DIP2                               R
     //16'hC700 1 1 0 0  0 | 1 1 1 | x x x x  x x x x cpuB_NMI_TRIG_R_cpuA_NMI_ACK_W_CTRL RW
+    // void snk_state::countryc_trackball_w(uint8_t data)
+    // {
+    //     m_countryc_trackball = data & 1;
+    // }
     ttl_74138_nodly c8 (.Enable1_bar(C7_4_OR), .Enable2_bar(C7_3_OR), .Enable3(C2_2_INV), .A(cpuA_A[10:8]), 
                   .Y({cpuB_NMI_TRIG_R_cpuA_NMI_ACK_W_CTRL, DIP2, DIP1, MCODE, P1_P2, P2, P1, COIN}));
     //---------------------------------------------
@@ -274,8 +280,15 @@ module AthenaCore_CPU_A_B_sync
     );
     //---------------------------------
 
+    //Country Golf trackball selector
+    logic trackballSel = 1'b0;
+    logic [6:0] trackX, trackY;
     //CPU A data input MUX
     always @(posedge clk) begin
+
+        trackX <= (trackballSel) ? TRACKBALL2[6:0] : TRACKBALL1[6:0]; //7bit resolution
+        trackY <= (trackballSel) ? TRACKBALL2[14:8] : TRACKBALL1[14:8]; //7bit resolution
+
              if(!CS_ROM_P3n && !cpuA_nMR)              cpuA_Din <= data_P3_4H;
         else if(!CS_ROM_P2n && !cpuA_nMR)              cpuA_Din <= data_P2_4F; 
         else if(!CS_ROM_P1n && !cpuA_nMR)              cpuA_Din <= data_P1_4E;
@@ -283,16 +296,35 @@ module AthenaCore_CPU_A_B_sync
 
         //Athena INPUTS
         else if(!COIN)                                 cpuA_Din <= {PLAYER1[1],PLAYER2[1],PLAYER1[0],PLAYER2[0],2'b11,(PLAYER1[9] & PLAYER2[9]),SND_BUSY}; //{START1,START2,COIN_1,COIN_2,UNK,UNK,SERVICE,SND_BUSY}                       
-        else if(!P1)                                   cpuA_Din <= {2'b11,PLAYER1[3],PLAYER1[2],PLAYER1[11],PLAYER1[10],PLAYER1[12],PLAYER1[13]}; //Player1 inputs:{UNK,UNK,BTN2,BTN1,RIGHT,LEFT,DOWN,UP}
-        else if(!P2)                                   cpuA_Din <= {2'b11,PLAYER2[3],PLAYER2[2],PLAYER2[11],PLAYER2[10],PLAYER2[12],PLAYER2[13]}; //Player2 inputs:{UNK,UNK,BTN2,BTN1,RIGHT,LEFT,DOWN,UP}
-        else if(!P1_P2)                                cpuA_Din <= {8'hff};  // P1/P2 Buttons:{UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK}
+        else if(!P1) begin
+            if (GAME == 8'h14) begin  //Country Golf
+                cpuA_Din <= {PLAYER1[2],trackX}; //Button1,TrackBallX
+			   end
+            else begin
+                cpuA_Din <= {2'b11,PLAYER1[3],PLAYER1[2],PLAYER1[11],PLAYER1[10],PLAYER1[12],PLAYER1[13]}; //Player1 inputs:{UNK,UNK,BTN2,BTN1,RIGHT,LEFT,DOWN,UP}
+            end
+        end
+        else if(!P2) begin            
+            if (GAME == 8'h14) begin  //Country Golf
+                cpuA_Din <= {PLAYER1[3],trackY}; //Button2,TrackBallY
+			   end
+            else begin  
+                cpuA_Din <= {2'b11,PLAYER2[3],PLAYER2[2],PLAYER2[11],PLAYER2[10],PLAYER2[12],PLAYER2[13]}; //Player2 inputs:{UNK,UNK,BTN2,BTN1,RIGHT,LEFT,DOWN,UP}
+            end
+        end
+        else if(!P1_P2)
+        begin
+            //Country Golf
+            if ((GAME == 8'h14) && !cpuA_nWR)  trackballSel <= cpuA_Dout[0] & 1'b1;
+            else                               cpuA_Din <= {8'hff};  // P1/P2 Buttons:{UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK}
+        end
         //Check Athena.mra for understand DIP1 and DIP2 bit swaps
         else if(!DIP1)                                 cpuA_Din <= (GAME == 8'd4) ? DSW[7:0] : {DSW[7:3],DSW[12],DSW[1:0]}; //DIP1 Switches 
         else if(!DIP2)                                 cpuA_Din <= (GAME == 8'd4) ? DSW[15:8] : {DSW[15],1'b1,DSW[14:13],DSW[11:8]}; //DIP2 Switches
         else if(!cpuB_NMI_TRIG_R_cpuA_NMI_ACK_W_CTRL)  cpuA_Din <= 8'hFF; //C700 Read
         //VIDEO RAM & Regs.      
         else if(!VD_to_cpuAdbus)                       cpuA_Din <= cpuA_Vin;
-        else                                           cpuA_Din <= 8'hFF;          
+        else                                           cpuA_Din <= 8'hFF;  
     end
 
     // ----------------- Z80B Cpu -----------------

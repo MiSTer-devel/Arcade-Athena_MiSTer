@@ -236,25 +236,24 @@ localparam CONF_STR = {
 	"P3-;",
 	"P4,SNAC;",
 	"P4-;",
-	"P4O[21:20],DB15 Devices,Off,OnlyP1,OnlyP2,P1&P2;",
+	"D1P4O[21:20],DB15 Devices,Off,OnlyP1,OnlyP2,P1&P2;",
 	"P4-;",
 	"DIP;",
 	"-;",
 	"T[0],Reset;",
 	"R[0],Reset and close OSD;",
-	"J1,Fire,Missile,Start1,Coin,Pause,Service;",
-	"jn,A,B,Start,R,L,X;",
-	"DEFMRA,Athena.mra;",
+	"J1,Button1,Button2,Start,Coin,Pause,Service;",
+	"jn,A,B,Start,Select,X,Y;",
+	"DEFMRA,CountryClub.mra;",
 	"V,v",`BUILD_DATE 
 };
 
-//HACK SETTTINGS
-// "P3O[20],Reverse BACK1 Scroll X,Off,On;",
-// "P3O[21],Reverse BACK1 Scroll Y,Off,On;",
-// "P3O[22],Reverse FRONT Scroll X,Off,On;",
-// "P3O[23],Reverse FRONT Scroll Y,Off,On;",
-// "P3O[24],Reverse SPRT. Offset X,Off,On;",
-// "P3O[25],Reverse SPRT. Offset Y,Off,On;",
+	// "P5,TrackBall Emulation;",
+	// "P5-;",
+	// "D2P5O[28:26],Dead Range,0,1,2,3,4,5,5,6,7;",
+	// "D2P5O[30:29],Polling Speed,Normal,Slow,Fast,Very Fast;",
+	// "P5-;",
+
 wire [7:0] hack_settings;
 //assign hack_settings = {1'b1,status[25],status[24],status[23],status[22],status[21],status[20],status[19]};
 assign hack_settings = {7'b0000000,status[19]};
@@ -289,13 +288,14 @@ end
 
 wire  [1:0] buttons;
 wire [127:0] status;
-logic [15:0] status_menumask;
+
 wire [10:0] ps2_key;
 
 wire [15:0] joystick_0, joystick_1;
+logic [15:0] joystick_l_analog_0, joystick_r_analog_0 /* synthesis keep */;
 
 //SNAC joysticks
-wire [1:0] SNAC_dev = status[21:20];
+wire [1:0] SNAC_dev = (game == 8'h14) ? 2'd0 : status[21:20]; //Disable for Country Golf
 wire         JOY_CLK, JOY_LOAD;
 wire         JOY_DATA  = USER_IN[5];
 
@@ -361,7 +361,10 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 	
 	.ps2_key(ps2_key),
 	.joystick_0(joystick_0),
-	.joystick_1(joystick_1)
+	.joystick_1(joystick_1),
+	// analog -127..+127, Y: [15:8], X: [7:0]
+    .joystick_l_analog_0(joystick_l_analog_0), //for countrygolf
+	.joystick_r_analog_0(joystick_r_analog_0), //for countrygolf
 );
 
 // PAUSE SYSTEM
@@ -441,6 +444,8 @@ AthenaCore snk_athena
 	.DSW({dsw2,dsw1}),
 	.PLAYER1(PLAYER1),
 	.PLAYER2(PLAYER2),
+	.TRACKBALL1({1'b0,trackb1_Y,1'b0,trackb1_X}),
+	.TRACKBALL2({1'b0,trackb2_Y,1'b0,trackb2_X}),
 	.GAME(game), //default ASO (ASO,Alpha Mission, Arian Mission)
 	//HACK settings
 	.hack_settings(hack_settings),
@@ -505,8 +510,21 @@ always @(posedge clk_53p6) begin
 		game <= ioctl_dout;
 	end
 end
-//Disable flip screen menu if the game is not Athena 
-assign status_menumask = (game == 8'h02) ? 16'h0 : 16'h1;
+
+//Game specific OSD menu settings
+logic [15:0] status_menumask = 16'hff;
+
+always_ff @(posedge clk_53p6) begin
+	case (game)
+		8'h02 : status_menumask[0] <= 1'b0; //Enable Flip Screen Hack for Athena only games
+		8'h14 : begin
+			status_menumask[1] <= 1'b1; //Disable SNAC DB15 for Country Golf
+			 //status_menumask[2] <= 1'b0; //Enable TrackBall emulation settings for Country Golf
+		end
+		default: status_menumask <= 16'hff;
+	endcase
+end
+
 
 logic [7:0] dsw1, dsw2;
 assign dsw1 = sw[0];
@@ -525,8 +543,6 @@ wire m_service1;
 wire m_start1;
 wire m_coin1;
 wire m_pause1; //active high
-wire m_chl;
-wire m_chr;
 
 //Player 2
 wire m_up2;
@@ -567,6 +583,70 @@ wire m_pause2; //active high
 	assign m_service2  = (SNAC_dev[1]) ?  ~(JOY_DB2[5] & JOY_DB2[11]) : ~joystick_1[8]; //DB15 (NeoGeo): Select+B
 	assign m_pause2    = (SNAC_dev[1]) ?   (JOY_DB2[4] & JOY_DB2[11]) :  joystick_1[9]; //DB15 (NeoGeo): Select+A
 
-assign PLAYER1 = {m_chl,m_chr,m_up1,m_down1,m_right1,m_left1,m_service1,5'b11111,m_btn2_1,m_btn1_1,m_start1,m_coin1};
+assign PLAYER1 = {2'b11,m_up1,m_down1,m_right1,m_left1,m_service1,5'b11111,m_btn2_1,m_btn1_1,m_start1,m_coin1};
 assign PLAYER2 = {2'b11,m_up2,m_down2,m_right2,m_left2,m_service2,5'b11111,m_btn2_2,m_btn1_2,m_start2,m_coin2};
+
+//Trackball controls
+// logic signed [7:0] trackb1_Xs = 8'sd0 /* synthesis preserve */;
+// logic signed [7:0] trackb1_Ys = 8'sd0 /* synthesis preserve */;
+// logic signed [7:0] trackb2_Xs = 8'sd0 /* synthesis preserve */;
+// logic signed [7:0] trackb2_Ys = 8'sd0 /* synthesis preserve */;
+logic [6:0] trackb1_X /* synthesis keep */;
+logic [6:0] trackb1_Y /* synthesis keep */;
+logic [6:0] trackb2_X /* synthesis keep */; 
+logic [6:0] trackb2_Y /* synthesis keep */;
+
+// reg [22:0] trackb_div = 23'd0;
+// wire [1:0] trackb_speed =status[30:29] /* synthesis keep */;
+// logic trackb_en /* synthesis keep */;
+// wire [3:0] trackb_deadzone = status[28:26] /* synthesis keep */;
+// wire [4:0] trackb_deadzone_minus = $signed(-trackb_deadzone) /* synthesis keep */;
+
+
+// logic signed [4:0] analogjoy_delta_X1 /* synthesis keep */;
+// assign  analogjoy_delta_X1 = joystick_l_analog_0[7:3];
+// logic signed [4:0] analogjoy_delta_Y1 /* synthesis keep */;
+// assign analogjoy_delta_Y1 = joystick_l_analog_0[15:11];
+// logic signed [4:0] analogjoy_delta_X2 /* synthesis keep */;
+// assign analogjoy_delta_X2 = joystick_r_analog_0[7:3];
+// logic signed [4:0] analogjoy_delta_Y2 /* synthesis keep */;
+// assign analogjoy_delta_Y2 = joystick_r_analog_0[15:11];
+
+// always_comb begin
+// 	case(trackb_speed)
+// 		2'b00: trackb_en = !trackb_div[22:0]; //Normal
+// 		2'b01: trackb_en = !trackb_div;       //Slow
+// 		2'b10: trackb_en = !trackb_div[21:0]; //Fast
+// 		2'b11: trackb_en = !trackb_div[20:0]; //Very Fast
+// 	endcase
+// end
+
+// always_ff @(posedge clk_53p6) begin
+// 	trackb_div <= trackb_div + 23'd1;
+// 	if(trackb_en) begin
+// 		if ((analogjoy_delta_X1 > $signed(trackb_deadzone)) || (analogjoy_delta_X1 < $signed(trackb_deadzone_minus)))
+// 			trackb1_Xs <= trackb1_Xs + $signed(analogjoy_delta_X1);
+
+// 		if ((analogjoy_delta_Y1 > $signed(trackb_deadzone)) || (analogjoy_delta_Y1 < $signed(trackb_deadzone_minus)))
+// 			trackb1_Ys <= trackb1_Ys + $signed(analogjoy_delta_Y1); 
+			
+// 		if ((analogjoy_delta_X2 > $signed(trackb_deadzone)) || (analogjoy_delta_X2 < $signed(trackb_deadzone_minus)))
+// 			trackb2_Xs <= trackb2_Xs + $signed(analogjoy_delta_X2); 
+
+// 		if ((analogjoy_delta_Y2 > $signed(trackb_deadzone)) || (analogjoy_delta_Y2 < $signed(trackb_deadzone_minus)))
+// 			trackb2_Ys <= trackb2_Ys + $signed(analogjoy_delta_Y2); 
+// 	end
+// end
+always_comb begin
+	// trackb1_X = trackb1_Xs[6:0];
+	// trackb1_Y = trackb1_Ys[6:0];
+	// trackb2_X = trackb2_Xs[6:0];
+	// trackb2_Y = trackb2_Ys[6:0];	
+	
+	//Best alternative??? 
+	trackb1_X = ~joystick_l_analog_0[7:1];
+	trackb1_Y = joystick_l_analog_0[15:9];
+	trackb2_X = ~joystick_r_analog_0[7:1];
+	trackb2_Y = joystick_r_analog_0[15:9];
+end
 endmodule

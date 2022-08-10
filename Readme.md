@@ -14,8 +14,15 @@ This core as beta release will be published as independet core. Finally will be 
 * Based on Tim Rudy 7400 TTL library [https://github.com/TimRudy/ice-chips-verilog](https://github.com/TimRudy/ice-chips-verilog).
 
 ## Instructions:
-This game is multiplayer, where two players can play taking turns with their own controllers. You have two action buttons for jump and attack and the 8-way joystick. As in the rest of the SNK Triple Z80 cores you have buttons for service and pause. Recomended gamepad button assignments:
+Athena is multiplayer, where two players can play taking turns with their own controllers. You have two action buttons for jump and attack and the 8-way joystick. As in the rest of the SNK Triple Z80 cores you have buttons for service and pause. Recomended gamepad button assignments:
 ![gamepad buttons](/docs/Athena_btn_map.jpg)
+
+
+For Country Club golf game, the trackball controls (one or up to two trackballs can be used simultaneously) are emulated using a gamepad with two analog sticks (tested with the Nintendo Switch Pro Controller with USB cable):
+![analog controls](/docs/Country_Club_controls.png)
+
+Apart from the standard MiSTer game controller support there is also there is SNAC support (for non-trackball) games for:
+* DB15 arcade controls (tested with the Splitter for official MiSTer by Antonio Villena. See: https://www.antoniovillena.es/store/product/splitter-for-official-mister/).
 
 ## Flip Screen settings:
 Athena does not include in the DIP settings an option to flip the screen (although it does include a Cocktail mode). Due to the fact that the default position of the screen in a screen appears inverted
@@ -37,11 +44,11 @@ The required ROM files follow the MAME naming conventions (check inside MRA for 
 /media/fat/_Arcade/mame/<mame rom>.zip
 
 ## Acknowledgments
+* To all Ko-fi contributors for supporting this project: __@bdlou__, __Peter Bray__, __Nat__, __Funkycochise__, __David__, __Kevin Coleman__, __Denymetanol__, __Schermobianco__, __TontonKaloun__, __Wark91__, __Dan__, __Beaps__, __Todd Gill__, __John Stringer__, __Moi__, __Olivier Krumm__, __Raymond Bielun__.
 * __@caiusarcade__ for their assistance in using files and converting PLD files.
 * __@topapate__ for general advice with the JTOPL core.
 * __@FCochise__ for helping with the rom settings of MRA files.
 * __@alanswx__ for helping me with some technical aspects related to the use of the MiSTer framework.
-* __Ko-fi supporters__: __bdlou__, __schermobianco__, __Nat__, __David__, __Peter Bray__, __Kevin Coleman__.
 * And all those who with their comments and shows of support have encouraged me to continue with this project.
 
 

@@ -12,6 +12,8 @@ module AthenaCore
     input wire i_clk, //53.6MHz
     input wire [15:0] PLAYER1,
     input wire [15:0] PLAYER2,
+    input wire [15:0] TRACKBALL1,
+    input wire [15:0] TRACKBALL2,
     input wire [7:0] GAME,
     input wire [15:0] DSW,
     output wire player_ctrl_clk,
@@ -214,6 +216,8 @@ TNKIIICore_Clocks_Sync amc_clocks_sync(
         .RESETn(VIDEO_RSTn),
         .PLAYER1(PLAYER1),
         .PLAYER2(PLAYER2),
+        .TRACKBALL1(TRACKBALL1),
+	    .TRACKBALL2(TRACKBALL2),
         .GAME(GAME),
         .DSW(DSW),
         .VBL(VBL),

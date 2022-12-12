@@ -9,7 +9,7 @@
 	<rbf>Athena</rbf>
 	<about author="RndMnkIII" twitter="@RndMnkIII"></about>
 	<resolution>16.1785kHz</resolution>
-	<rotation>vertical (cw)</rotation>
+	<rotation>horizontal</rotation>
 	<players>2</players>
 	<joystick>8-way</joystick>
 	<num_buttons>2</num_buttons>

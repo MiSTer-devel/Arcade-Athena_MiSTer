@@ -365,8 +365,8 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
 	// analog -127..+127, Y: [15:8], X: [7:0]
-    .joystick_l_analog_0(joystick_l_analog_0), //for countrygolf
-	.joystick_r_analog_0(joystick_r_analog_0), //for countrygolf
+	.joystick_l_analog_0(joystick_l_analog_0), //for countrygolf
+	.joystick_r_analog_0(joystick_r_analog_0)  //for countrygolf
 );
 
 // PAUSE SYSTEM

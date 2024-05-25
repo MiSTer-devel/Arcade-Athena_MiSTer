@@ -67,3 +67,7 @@ incremental_db/
 db/
 _output_files/
 PLLJ_PLLSPE_INFO.txt
+/output_files
+build_id.v
+c5_pin_model_dump.txt
+jtag.cdf
